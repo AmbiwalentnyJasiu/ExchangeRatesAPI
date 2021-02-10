@@ -1,19 +1,10 @@
 ﻿using System;
-using System.Threading.Tasks;
-using System.Net.Http;
-using System.Net.Http.Headers;
-
 
 namespace ExchangeRatesAPI
 {
     class Program
-    {
-        private static readonly HttpClient client = new HttpClient();
-        private static async Task GetDataFromGit()
-        {
-
-        }
-        static async Task Main(string[] args)
+    { 
+        static void Main(string[] args)
         {
             Console.WriteLine("Welcome\nType '1' to see list of exchange rates\n" +
                                        "Or   '2' to convert chosen curency\n");
@@ -27,12 +18,12 @@ namespace ExchangeRatesAPI
             {
                 case 1:
 
-                    Console.WriteLine("\nBase: EUR");
+                     Console.WriteLine("\nBase: EUR");
 
-                    for (int i = 0; i < 5; i++)
-                    {
-                        Console.WriteLine(names[i] + ": " + values[i]);
-                    }
+                     for (int i = 0; i < 5; i++)
+                     {
+                         Console.WriteLine(names[i] + ": " + values[i]);
+                     }
 
                     break;
 
