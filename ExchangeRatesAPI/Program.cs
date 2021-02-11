@@ -1,10 +1,26 @@
 ﻿using System;
+using System.Net.Http;
+using System.Net.Http.Headers;
+using System.Threading.Tasks;
 
 namespace ExchangeRatesAPI
 {
     class Program
-    { 
-        static void Main(string[] args)
+    {
+        private static readonly HttpClient client = new HttpClient();
+
+        private static async Task<string> GetDataFromGit()
+        {
+            client.DefaultRequestHeaders.Accept.Add(
+                new MediaTypeWithQualityHeaderValue("application/json"));
+
+            var stringResponse = client.GetStringAsync("https://api.exchangeratesapi.io/latest");
+
+            string msg = await stringResponse;
+
+            return msg;
+        }
+        static async Task Main(string[] args)
         {
             Console.WriteLine("Welcome\nType '1' to see list of exchange rates\n" +
                                        "Or   '2' to convert chosen curency\n");
@@ -18,12 +34,16 @@ namespace ExchangeRatesAPI
             {
                 case 1:
 
-                     Console.WriteLine("\nBase: EUR");
+                    //Console.WriteLine("\nBase: EUR");
 
-                     for (int i = 0; i < 5; i++)
-                     {
-                         Console.WriteLine(names[i] + ": " + values[i]);
-                     }
+                    //for (int i = 0; i < 5; i++)
+                    //{
+                    //    Console.WriteLine(names[i] + ": " + values[i]);
+                    //}
+
+                    string response = await GetDataFromGit();
+
+                    Console.WriteLine(response);
 
                     break;
 
