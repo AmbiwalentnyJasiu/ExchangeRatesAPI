@@ -2,11 +2,6 @@
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Threading.Tasks;
-using System.Runtime.Serialization.Json;
-using System.Text.Json;
-using System.Collections.Generic;
-using System.Net;
-using System.ComponentModel;
 
 namespace ExchangeRatesAPI
 {
@@ -14,94 +9,88 @@ namespace ExchangeRatesAPI
     {
         private static readonly HttpClient client = new HttpClient();
 
-        private static async Task<Format> GetDataFromGit()
+        private static async Task<string> GetDataFromGit()
         {
-            client.DefaultRequestHeaders.Accept.Clear();
-            client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+            client.DefaultRequestHeaders.Accept.Add(
+                new MediaTypeWithQualityHeaderValue("application/json"));
 
-            HttpResponseMessage streamResponse = await client.GetAsync("https://api.exchangeratesapi.io/latest");
+            var stringResponse = client.GetStringAsync("https://api.exchangeratesapi.io/latest");
 
-            streamResponse.EnsureSuccessStatusCode();
+            string msg = await stringResponse;
 
-            var result = await streamResponse.Content.ReadAsStreamAsync();
-            var resultList = await JsonSerializer.DeserializeAsync<Format>(result);
-
-            return resultList;
+            return msg;
         }
         static async Task Main(string[] args)
         {
-            var response = await GetDataFromGit();
-            int choice;
+            Console.WriteLine("Welcome\nType '1' to see list of exchange rates\n" +
+                                       "Or   '2' to convert chosen curency\n");
+            int choice = Convert.ToInt32(Console.ReadLine());
 
-            Console.WriteLine("Welcome");
+            double[] values = { 4D, 5D, 1D, 1D, 8D };
 
-            do
+            string[] names = { "USD", "PLN", "BGP", "RPT", "WED" };
+
+            switch (choice)
             {
-                Console.WriteLine("\nType '1' to see list of exchange rates\n" +
-                                  "Or   '2' to convert chosen curency\n" +
-                                  "Or   '3' to exit");
+                case 1:
 
-                choice = Convert.ToInt32(Console.ReadLine());
+                    //Console.WriteLine("\nBase: EUR");
 
-                switch (choice)
-                {
-                    case 1:
+                    //for (int i = 0; i < 5; i++)
+                    //{
+                    //    Console.WriteLine(names[i] + ": " + values[i]);
+                    //}
 
-                        foreach (PropertyDescriptor descriptor in TypeDescriptor.GetProperties(response.Rates))
+                    string response = await GetDataFromGit();
+
+                    Console.WriteLine(response);
+
+                    break;
+
+                case 2:
+
+                    Console.Write("\nName the curency you want to exchange: ");
+
+                    string curency = Console.ReadLine();
+                    int index = 0;
+                    bool found = false;
+
+                    foreach(string element in names)
+                    {
+                        if(curency == element)
                         {
-                            string name = descriptor.Name;
-                            object value = descriptor.GetValue(response.Rates);
-                            Console.WriteLine(name + " : " + value);
+                            found = true;
+                            break;
                         }
-
-                        Console.WriteLine("\nBase: " + response.Base);
-
-                        Console.WriteLine("\nLast updated:" + response.Date);
-
-                        break;
-
-                    case 2:
-
-                        Console.Write("\nName the currency you want to exchange: ");
-
-                        string currency = Console.ReadLine();
-                        bool notFound = true;
-
-                        foreach (PropertyDescriptor descriptor in TypeDescriptor.GetProperties(response.Rates))
+                        else
                         {
-                            if (currency == descriptor.Name)
-                            {
-                                notFound = false;
-
-                                Console.Write("Input the amount of " + currency + " to convert: ");
-                                double amount = Convert.ToDouble(Console.ReadLine());
-
-                                Console.WriteLine("Result: " + (amount * Convert.ToDouble(descriptor.GetValue(response.Rates))) + " EUR");
-                                break;
-                            }
+                            index++;
                         }
+                    }
+                    
+                    if (found)
+                    {
+                        Console.WriteLine(names[index] + ": " + values[index]);
 
-                        if (notFound)
-                        {
-                            Console.WriteLine("Invalid name of currency");
-                        }
+                        Console.Write("Type in how much to convert: ");
+                        double amount = Convert.ToDouble(Console.ReadLine());
 
-                        break;
+                        Console.WriteLine("Result: " + (amount * values[index]));
+                    }
+                    else
+                    {
+                        Console.WriteLine("Invalid name of currency");
+                    }
 
-                    case 3:
+                    break;
 
-                        Console.WriteLine("Exiting...");
+                default:
 
-                        break;
+                    Console.WriteLine("Invalid command");
 
-                    default:
-
-                        Console.WriteLine("Invalid command");
-
-                        break;
-
-                }
-            } while (choice != 3);
+                    break;
+                
+            }
         }
     }
 }
