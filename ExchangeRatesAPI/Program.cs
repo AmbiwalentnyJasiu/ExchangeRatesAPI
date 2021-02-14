@@ -73,7 +73,7 @@ namespace ExchangeRatesAPI
                                 Console.Write("Input the amount of " + currency + " to convert: ");
                                 double amount = Convert.ToDouble(Console.ReadLine());
 
-                                Console.WriteLine("Result: " + (amount * Convert.ToDouble(descriptor.GetValue(response.Rates))) + " EUR");
+                                Console.WriteLine("\nResult: " + (amount / Convert.ToDouble(descriptor.GetValue(response.Rates))) + " EUR");
                                 break;
                             }
                         }
