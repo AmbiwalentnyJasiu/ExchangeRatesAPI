@@ -1,14 +1,17 @@
 ﻿using System;
+using System.ComponentModel;
 using System.Net.Http;
 using System.Net.Http.Headers;
-using System.Threading.Tasks;
 using System.Text.Json;
-using System.ComponentModel;
+using System.Threading.Tasks;
+
+
 
 namespace ExchangeRatesAPI
 {
     class Program
     {
+        const string url = "https://api.exchangeratesapi.io/latest";
         private static readonly HttpClient client = new HttpClient();
 
         private static async Task<Format> GetDataFromGit()
@@ -16,7 +19,7 @@ namespace ExchangeRatesAPI
             client.DefaultRequestHeaders.Accept.Clear();
             client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
 
-            HttpResponseMessage streamResponse = await client.GetAsync("https://api.exchangeratesapi.io/latest");
+            HttpResponseMessage streamResponse = await client.GetAsync(url);
 
             streamResponse.EnsureSuccessStatusCode();
 
@@ -44,11 +47,9 @@ namespace ExchangeRatesAPI
                 {
                     case 1:
 
-                        foreach (PropertyDescriptor descriptor in TypeDescriptor.GetProperties(response.Rates))
+                        foreach (string key in response.Rates.Keys)
                         {
-                            string name = descriptor.Name;
-                            object value = descriptor.GetValue(response.Rates);
-                            Console.WriteLine(name + " : " + value);
+                            Console.WriteLine(key + " : " + response.Rates[key]);
                         }
 
                         Console.WriteLine("\nBase: " + response.Base);
@@ -64,16 +65,16 @@ namespace ExchangeRatesAPI
                         string currency = Console.ReadLine();
                         bool notFound = true;
 
-                        foreach (PropertyDescriptor descriptor in TypeDescriptor.GetProperties(response.Rates))
+                        foreach (string key in response.Rates.Keys)
                         {
-                            if (currency == descriptor.Name)
+                            if (currency == key)
                             {
                                 notFound = false;
 
                                 Console.Write("Input the amount of " + currency + " to convert: ");
                                 double amount = Convert.ToDouble(Console.ReadLine());
 
-                                Console.WriteLine("\nResult: " + (amount / Convert.ToDouble(descriptor.GetValue(response.Rates))) + " EUR");
+                                Console.WriteLine("\nResult: " + (amount / response.Rates[key]) + " EUR");
                                 break;
                             }
                         }
