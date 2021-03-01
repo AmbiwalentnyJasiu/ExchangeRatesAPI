@@ -8,7 +8,7 @@ namespace ExchangeRatesAPI
     class Format
     {
         [JsonPropertyName("rates")]
-        public Dictionary<string,double> Rates { get; set; }
+        public SortedDictionary<string,double> Rates { get; set; }
 
         [JsonPropertyName("base")]
         public string Base { get; set; }

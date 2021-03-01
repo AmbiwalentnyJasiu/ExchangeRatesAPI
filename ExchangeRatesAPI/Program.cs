@@ -41,63 +41,68 @@ namespace ExchangeRatesAPI
                                   "Or   '2' to convert chosen curency\n" +
                                   "Or   '3' to exit");
 
-                choice = Convert.ToInt32(Console.ReadLine());
 
-                switch (choice)
+                if (int.TryParse(Console.ReadLine(), out choice))
                 {
-                    case 1:
 
-                        foreach (string key in response.Rates.Keys)
-                        {
-                            Console.WriteLine(key + " : " + response.Rates[key]);
-                        }
+                    switch (choice)
+                    {
+                        case 1:
 
-                        Console.WriteLine("\nBase: " + response.Base);
-
-                        Console.WriteLine("\nLast updated:" + response.Date);
-
-                        break;
-
-                    case 2:
-
-                        Console.Write("\nName the currency you want to exchange: ");
-
-                        string currency = Console.ReadLine();
-                        bool notFound = true;
-
-                        foreach (string key in response.Rates.Keys)
-                        {
-                            if (currency == key)
+                            foreach (string key in response.Rates.Keys)
                             {
-                                notFound = false;
-
-                                Console.Write("Input the amount of " + currency + " to convert: ");
-                                double amount = Convert.ToDouble(Console.ReadLine());
-
-                                Console.WriteLine("\nResult: " + (amount / response.Rates[key]) + " EUR");
-                                break;
+                                Console.WriteLine($"{key} : {response.Rates[key]}");
                             }
-                        }
 
-                        if (notFound)
-                        {
-                            Console.WriteLine("Invalid name of currency");
-                        }
+                            Console.WriteLine($"\nBase: {response.Base}");
 
-                        break;
+                            Console.WriteLine($"\nLast updated: {response.Date}");
 
-                    case 3:
+                            break;
 
-                        Console.WriteLine("Exiting...");
+                        case 2:
 
-                        break;
+                            Console.Write("\nName the currency you want to exchange: ");
 
-                    default:
+                            string currency = Console.ReadLine();
 
-                        Console.WriteLine("Invalid command");
+                            if (response.Rates.ContainsKey(currency))
+                            {
+                                Console.Write($"Input the amount of {currency} to convert: ");
 
-                        break;
+                                if (double.TryParse(Console.ReadLine(), out double amount))
+                                {
+                                    Console.WriteLine($"\nResult: {amount / response.Rates[currency]} EUR");
+                                }
+                                else
+                                {
+                                    Console.WriteLine("Input correct number");
+                                }
+                            }
+                            else
+                            {
+                                Console.WriteLine("Invalid name of currency");
+                            }
 
+                            break;
+
+                        case 3:
+
+                            Console.WriteLine("Exiting...");
+
+                            break;
+
+                        default:
+
+                            Console.WriteLine("Invalid command");
+
+                            break;
+
+                    }
+                }
+                else
+                {
+                    Console.WriteLine("Input correct number!");
                 }
             } while (choice != 3);
         }
