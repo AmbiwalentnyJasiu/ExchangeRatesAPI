@@ -103,15 +103,6 @@ namespace ExchangeRatesAPI
 
         private static double ReadChosenFromDB(string currency)
         {
-
-            //var dBase = ReadAllFromDB();
-
-            //if (dBase.ContainsKey(currency))
-            //{
-            //    return dBase[currency];
-            //}
-            //else return -1;
-
             bool exists;
             double result = -1;
 
