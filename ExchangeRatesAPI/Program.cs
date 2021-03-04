@@ -104,39 +104,40 @@ namespace ExchangeRatesAPI
         private static double ReadChosenFromDB(string currency)
         {
 
-            var dBase = ReadAllFromDB();
+            //var dBase = ReadAllFromDB();
 
-            if (dBase.ContainsKey(currency))
-            {
-                return dBase[currency];
-            }
-            else return -1;
-
-            //bool exists;
-            //double result = -1;
-
-            //string readString = $"SELECT * FROM Rates WHERE Currency = '{currency}'";
-            //string checkString = $"select case when exists((select * from rates where Currency = '{currency}')) then 1 else 0 end";
-
-            //SqlConnection connection = new SqlConnection(connectionString);
-
-            //if (connection.State != System.Data.ConnectionState.Open)
-            //    connection.Open();
-
-            //SqlCommand readCommand = new SqlCommand(readString, connection);
-            //SqlCommand checkCommand = new SqlCommand(checkString, connection);
-
-            //exists = (int)checkCommand.ExecuteScalar() == 1;
-
-            //if (exists)
+            //if (dBase.ContainsKey(currency))
             //{
-            //    var response = readCommand.ExecuteReader();
-            //    result = Convert.ToDouble(response.GetString(0));   
+            //    return dBase[currency];
             //}
+            //else return -1;
 
-            //connection.Close();
+            bool exists;
+            double result = -1;
 
-            //return result;
+            string readString = $"SELECT rate FROM Rates WHERE Currency = '{currency}'";
+            string checkString = $"select case when exists((select * from rates where Currency = '{currency}')) then 1 else 0 end";
+
+            SqlConnection connection = new SqlConnection(connectionString);
+
+            if (connection.State != System.Data.ConnectionState.Open)
+                connection.Open();
+
+            SqlCommand readCommand = new SqlCommand(readString, connection);
+            SqlCommand checkCommand = new SqlCommand(checkString, connection);
+
+            exists = (int)checkCommand.ExecuteScalar() == 1;
+
+            if (exists)
+            {
+                var response = readCommand.ExecuteReader();
+                response.Read();
+                result = Convert.ToDouble(response.GetString(0));
+            }
+
+            connection.Close();
+
+            return result;
         }
 
         private static void UpdateDB(Format data)
@@ -212,6 +213,8 @@ namespace ExchangeRatesAPI
                             string currency = Console.ReadLine().ToUpper();
 
                             double value = ReadChosenFromDB(currency);
+
+                            Console.WriteLine($"1 EUR = {value} {currency}");
 
                             if (value >= 0)
                             {
