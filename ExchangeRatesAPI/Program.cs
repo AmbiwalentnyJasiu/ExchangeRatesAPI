@@ -36,36 +36,61 @@ namespace ExchangeRatesAPI
 
         }
 
-        private static void UploadToDB(Format data)
+        private static bool CheckIfTableExists(string name)
         {
             bool exists;
 
+            string checkString = $"select case when exists((select* from information_schema.tables " +
+                                 $"where table_name = '{name}')) then 1 else 0 end";
+            SqlConnection connection = new SqlConnection(connectionString);
+            if (connection.State != System.Data.ConnectionState.Open)
+                connection.Open();
+
+            SqlCommand checkCommand = new SqlCommand(checkString, connection);
+
+            exists = (int)checkCommand.ExecuteScalar() == 1;
+
+            connection.Close();
+
+            return exists;
+
+        }
+
+        private static bool CheckIfElementExists(string name, string currency)
+        {
+            bool exists;
+
+            string checkString = $"select case when exists((select * from {name} " +
+                                 $"where Currency = '{currency}')) then 1 else 0 end";
+            SqlConnection connection = new SqlConnection(connectionString);
+            if (connection.State != System.Data.ConnectionState.Open)
+                connection.Open();
+
+            SqlCommand checkCommand = new SqlCommand(checkString, connection);
+
+            exists = (int)checkCommand.ExecuteScalar() == 1;
+
+            connection.Close();
+
+            return exists;
+
+        }
+
+        private static void UploadToDB(Format data)
+        {
             string createString = "CREATE TABLE Rates( Currency char(3),  rate varchar(10) NOT NULL, PRIMARY KEY (currency))";
-            string checkString = "select case when exists((select* from information_schema.tables where table_name = 'Rates')) then 1 else 0 end";
-            string clearString = "TRUNCATE TABLE Rates";
             string uploadString;
 
             SqlConnection connection = new SqlConnection(connectionString);
 
-            SqlCommand checkCommand = new SqlCommand(checkString, connection);
             SqlCommand uploadCommand;
             
             if (connection.State != System.Data.ConnectionState.Open)
                 connection.Open();
 
-            exists = (int)checkCommand.ExecuteScalar() == 1;
-
-            if (!exists)
-            {
-                SqlCommand createCommand = new SqlCommand(createString, connection);
-                createCommand.ExecuteNonQuery();
-            }
-            else
-            {
-                SqlCommand clearCommand = new SqlCommand(clearString, connection);
-                clearCommand.ExecuteNonQuery();
-                
-            }
+            SqlCommand createCommand = new SqlCommand(createString, connection);
+            createCommand.ExecuteNonQuery();
+           
                
             foreach(string key in data.Rates.Keys)
             {
@@ -79,96 +104,99 @@ namespace ExchangeRatesAPI
 
         private static Dictionary<string,double> ReadAllFromDB()
         {
-            Dictionary<string, double> result = new Dictionary<string, double>();
-            string readString = "SELECT * FROM Rates";
+            bool exists = CheckIfTableExists("Rates");
 
-            SqlConnection connection = new SqlConnection(connectionString);
-
-            if (connection.State != System.Data.ConnectionState.Open)
-                connection.Open();
-
-            SqlCommand readCommand = new SqlCommand(readString, connection);
-
-            var response = readCommand.ExecuteReader();
-
-            while (response.Read())
+            if (exists)
             {
-                result.Add(response.GetString(0), Convert.ToDouble(response.GetString(1)));
+                Dictionary<string, double> result = new Dictionary<string, double>();
+                string readString = "SELECT * FROM Rates";
+
+                SqlConnection connection = new SqlConnection(connectionString);
+
+                if (connection.State != System.Data.ConnectionState.Open)
+                    connection.Open();
+
+                SqlCommand readCommand = new SqlCommand(readString, connection);
+
+                var response = readCommand.ExecuteReader();
+
+                while (response.Read())
+                {
+                    result.Add(response.GetString(0), Convert.ToDouble(response.GetString(1)));
+                }
+
+                connection.Close();
+
+                return result;
             }
-
-            connection.Close();
-
-            return result;
+            else return null;
         }
 
         private static double ReadChosenFromDB(string currency)
         {
-            bool exists;
-            double result = -1;
+            bool elementExists = CheckIfElementExists("Rates", currency);
 
             string readString = $"SELECT rate FROM Rates WHERE Currency = '{currency}'";
-            string checkString = $"select case when exists((select * from rates where Currency = '{currency}')) then 1 else 0 end";
-
-            SqlConnection connection = new SqlConnection(connectionString);
-
-            if (connection.State != System.Data.ConnectionState.Open)
-                connection.Open();
-
-            SqlCommand readCommand = new SqlCommand(readString, connection);
-            SqlCommand checkCommand = new SqlCommand(checkString, connection);
-
-            exists = (int)checkCommand.ExecuteScalar() == 1;
-
-            if (exists)
+            if (elementExists)
             {
+                SqlConnection connection = new SqlConnection(connectionString);
+
+                if (connection.State != System.Data.ConnectionState.Open)
+                    connection.Open();
+
+                SqlCommand readCommand = new SqlCommand(readString, connection);
+
+                
                 var response = readCommand.ExecuteReader();
                 response.Read();
-                result = Convert.ToDouble(response.GetString(0));
+                double result = Convert.ToDouble(response.GetString(0));
+                
+                connection.Close();
+                return result;
             }
-
-            connection.Close();
-
-            return result;
+            else return -1;
         }
 
         private static void UpdateDB(Format data)
         {
-            string updateString;
-            SqlCommand updateCommand;
-            SqlConnection connection = new SqlConnection(connectionString);
+            bool tableExists = CheckIfTableExists("Rates");
+            bool elementExists;
 
-            if (connection.State != System.Data.ConnectionState.Open)
-                connection.Open();
-
-            foreach (string key in data.Rates.Keys)
+            if (tableExists)
             {
-                updateString = $"UPDATE rates set rate = '{data.Rates[key]}' WHERE currency = '{key}'";
-                updateCommand = new SqlCommand(updateString, connection);
-                updateCommand.ExecuteNonQuery();
+                string updateString;
+                SqlCommand updateCommand;
+                SqlConnection connection = new SqlConnection(connectionString);
+
+                if (connection.State != System.Data.ConnectionState.Open)
+                    connection.Open();
+
+                foreach (string key in data.Rates.Keys)
+                {
+                    elementExists = CheckIfElementExists("Rates", key);
+                    if (elementExists)
+                    {
+                        updateString = $"UPDATE rates set rate = '{data.Rates[key]}' WHERE currency = '{key}'";
+                    }
+                    else
+                    {
+                        updateString = $"INSERT INTO rates (Currency, rate) VALUES ('{key}' ,  '{data.Rates[key]}')";
+                    }
+
+                    updateCommand = new SqlCommand(updateString, connection);
+                    updateCommand.ExecuteNonQuery();
+                }
+
+                connection.Close();
             }
-
-            connection.Close();
+            else
+            {
+                UploadToDB(data);
+            }
         }
 
-        private static void DeleteTab()
-        {
-            string createString = $"drop table rates;";
-            SqlConnection connection = new SqlConnection(connectionString);
-
-            SqlCommand createCommand = new SqlCommand(createString, connection);
-            if (connection.State != System.Data.ConnectionState.Open)
-                createCommand.Connection.Open();
-
-            createCommand.ExecuteNonQuery();
-
-            connection.Close();
-        }
         static async Task Main(string[] args)
-        {
-            var response = await GetDataFromGit();
-
-            UploadToDB(response);
-            
+        {            
             int choice;
 
             Console.WriteLine("Welcome");
@@ -190,25 +218,37 @@ namespace ExchangeRatesAPI
 
                             var result = ReadAllFromDB();
 
-                            foreach (string key in result.Keys)
+                            if (result != null)
                             {
-                                Console.WriteLine($"{key} : {result[key]}");
+                                foreach (string key in result.Keys)
+                                {
+                                    Console.WriteLine($"{key} : {result[key]}");
+                                }
+                            }
+                            else
+                            {
+                                Console.WriteLine("Table does not exist, Upload data first!");
                             }
 
                             break;
 
                         case 2:
 
+                            if (!CheckIfTableExists("Rates"))
+                            {
+                                Console.WriteLine("Table does not exist, Upload data first");
+                                break;
+                            }
                             Console.Write("\nName the currency you want to exchange: ");
 
                             string currency = Console.ReadLine().ToUpper();
 
                             double value = ReadChosenFromDB(currency);
 
-                            Console.WriteLine($"1 EUR = {value} {currency}");
-
-                            if (value >= 0)
+                            if (value > 0)
                             {
+                                Console.WriteLine($"1 EUR = {value} {currency}");
+                                
                                 Console.Write($"Input the amount of {currency} to convert: ");
 
                                 if (double.TryParse(Console.ReadLine(), out double amount))
@@ -223,7 +263,7 @@ namespace ExchangeRatesAPI
                             else
                             {
                                 Console.WriteLine("Invalid name of currency");
-                            }
+                            }                           
 
                             break;
 
